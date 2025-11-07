@@ -20,6 +20,7 @@
 ## Требования
 
 - Python 3.7+
+- Google Chrome или Chromium браузер
 - Steam аккаунты
 - Изображения для аватарок (JPG, PNG, GIF, BMP)
 
@@ -32,7 +33,29 @@ git clone https://github.com/yourusername/avatarsscript.git
 cd avatarsscript
 ```
 
-### 2. Установка зависимостей
+### 2. Установка Google Chrome
+
+Программа использует Google Chrome для автоматизации входа в Steam.
+
+**Linux:**
+```bash
+# Ubuntu/Debian
+sudo apt update
+sudo apt install google-chrome-stable
+
+# Или Chromium
+sudo apt install chromium-browser
+```
+
+**Windows:**
+- Скачайте и установите Google Chrome: https://www.google.com/chrome/
+
+**macOS:**
+```bash
+brew install --cask google-chrome
+```
+
+### 3. Установка зависимостей Python
 
 ```bash
 pip install -r requirements.txt
@@ -45,6 +68,8 @@ python -m venv venv
 source venv/bin/activate  # На Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
+
+**Важно:** ChromeDriver будет установлен автоматически при первом запуске через Selenium. Если возникнут проблемы, убедитесь что версия Chrome актуальная.
 
 ## Настройка
 
@@ -347,6 +372,29 @@ username:password:shared_secret
 - Рекомендуется задержка между операциями (по умолчанию 60 секунд)
 - Не рекомендуется использовать слишком маленькую задержку (меньше 30 секунд), чтобы избежать блокировки Steam
 
+## Техническая информация
+
+### Как работает программа?
+
+Программа использует **Selenium WebDriver** для автоматизации браузера Chrome:
+
+1. **Авторизация**: Открывается страница входа Steam, автоматически вводятся логин и пароль
+2. **Steam Guard**: Если требуется код 2FA, программа генерирует его из `shared_secret` используя алгоритм TOTP (Time-based One-Time Password)
+3. **Смена аватарки**: После успешного входа браузер переходит на страницу редактирования профиля и загружает новую аватарку
+4. **Безопасность**: Все действия выполняются в реальном браузере, как если бы вы делали это вручную
+
+### Headless режим
+
+По умолчанию браузер работает в **headless режиме** (без GUI) - вы не увидите окно браузера. Это:
+- Быстрее и потребляет меньше ресурсов
+- Позволяет работать на серверах без графического интерфейса
+- Не отвлекает визуально
+
+Если хотите видеть процесс в реальном времени для отладки, измените в `src/steam_manager.py`:
+```python
+steam_manager = SteamManager(headless=False)
+```
+
 ## FAQ
 
 ### Почему такая большая задержка между аккаунтами?
@@ -387,4 +435,4 @@ MIT License - используйте свободно, но на свой рис
 
 ---
 
-**Разработано с использованием Python и Steam API**
+**Разработано с использованием Python, Selenium WebDriver и Chrome**
