@@ -15,9 +15,9 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from selenium.common.exceptions import TimeoutException, NoSuchElementException, WebDriverException
+from webdriver_manager.chrome import ChromeDriverManager
 import logging
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -93,22 +93,76 @@ class SteamManager:
         try:
             chrome_options = Options()
 
+            # Попытка найти установленный Chromium
+            chromium_paths = [
+                '/opt/chromium/chrome-linux64/chrome',
+                '/usr/bin/chromium',
+                '/usr/bin/chromium-browser',
+                '/usr/bin/google-chrome',
+                '/usr/bin/google-chrome-stable'
+            ]
+
+            chrome_binary = None
+            for path in chromium_paths:
+                if os.path.exists(path):
+                    chrome_binary = path
+                    logger.debug(f"Найден Chrome/Chromium: {path}")
+                    break
+
+            if chrome_binary:
+                chrome_options.binary_location = chrome_binary
+
             if self.headless:
                 chrome_options.add_argument('--headless=new')
 
-            # Дополнительные опции для стабильности
+            # Минимальные опции для работы в Docker
             chrome_options.add_argument('--no-sandbox')
             chrome_options.add_argument('--disable-dev-shm-usage')
             chrome_options.add_argument('--disable-gpu')
             chrome_options.add_argument('--window-size=1920,1080')
-            chrome_options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
+            chrome_options.add_argument('--ignore-certificate-errors')
+            chrome_options.add_argument('--disable-blink-features=AutomationControlled')
+
+            # Более реалистичный user-agent (актуальная версия Chrome)
+            chrome_options.add_argument('--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36')
+
+            # Добавляем реалистичные preferences
+            chrome_options.add_experimental_option("prefs", {
+                "profile.default_content_setting_values.notifications": 2,
+                "credentials_enable_service": False,
+                "profile.password_manager_enabled": False
+            })
 
             # Отключаем автоматизацию detection
             chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
             chrome_options.add_experimental_option('useAutomationExtension', False)
 
+            # Настройка ChromeDriver
+            logger.debug("Инициализация ChromeDriver...")
+
+            # Попытка использовать локальный ChromeDriver
+            chromedriver_paths = [
+                '/opt/chromium/chromedriver-linux64/chromedriver',
+                '/usr/bin/chromedriver',
+                '/usr/local/bin/chromedriver'
+            ]
+
+            chromedriver_path = None
+            for path in chromedriver_paths:
+                if os.path.exists(path):
+                    chromedriver_path = path
+                    logger.debug(f"Найден ChromeDriver: {path}")
+                    break
+
+            if chromedriver_path:
+                service = Service(chromedriver_path)
+            else:
+                # Если не найден локально, используем webdriver-manager
+                logger.debug("Локальный ChromeDriver не найден, используем webdriver-manager")
+                service = Service(ChromeDriverManager().install())
+
             # Создаем драйвер
-            self.driver = webdriver.Chrome(options=chrome_options)
+            self.driver = webdriver.Chrome(service=service, options=chrome_options)
             self.driver.execute_cdp_cmd('Page.addScriptToEvaluateOnNewDocument', {
                 'source': 'Object.defineProperty(navigator, "webdriver", {get: () => undefined})'
             })
@@ -117,8 +171,9 @@ class SteamManager:
 
         except WebDriverException as e:
             logger.error(f"✗ Ошибка инициализации WebDriver: {str(e)}")
-            logger.error("   Убедитесь, что Chrome и ChromeDriver установлены")
-            logger.error("   Установка ChromeDriver: pip install webdriver-manager")
+            logger.error("   Убедитесь, что Chrome или Chromium установлен")
+            logger.error("   Linux: sudo apt install chromium-browser")
+            logger.error("   или: sudo apt install google-chrome-stable")
             raise
 
     def login(self, username: str, password: str, shared_secret: str = "") -> bool:
@@ -140,13 +195,19 @@ class SteamManager:
             self.driver.get("https://steamcommunity.com/login/home/?goto=")
 
             # Ждем загрузки страницы
-            time.sleep(2)
+            logger.debug("Ожидание загрузки страницы...")
+            time.sleep(5)
+
+            # Проверяем, что страница загрузилась
+            logger.debug(f"Текущий URL: {self.driver.current_url}")
+            logger.debug(f"Заголовок страницы: {self.driver.title}")
 
             # Находим и заполняем поле логина
-            logger.debug("Ввод логина...")
-            username_field = WebDriverWait(self.driver, 10).until(
+            logger.debug("Поиск поля ввода логина...")
+            username_field = WebDriverWait(self.driver, 30).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, "input[type='text']"))
             )
+            logger.debug("Поле логина найдено")
             username_field.clear()
             username_field.send_keys(username)
             time.sleep(0.5)
