@@ -39,6 +39,13 @@ class SteamGuardGenerator:
             return ""
 
         try:
+            # Исправляем padding для base64 если нужно
+            # Base64 строки должны быть кратны 4 символам
+            missing_padding = len(shared_secret) % 4
+            if missing_padding:
+                shared_secret += '=' * (4 - missing_padding)
+                logger.debug(f"Добавлен padding к shared_secret: {missing_padding} символов")
+
             # Декодируем shared_secret из base64
             secret = base64.b64decode(shared_secret)
 
@@ -226,7 +233,7 @@ class SteamManager:
 
             # Ждем появления формы Steam Guard или успешного входа
             logger.debug("Ожидание экрана подтверждения...")
-            time.sleep(5)
+            time.sleep(7)  # Увеличено время ожидания
 
             # Проверяем, требуется ли код Steam Guard
             try:
@@ -306,12 +313,28 @@ class SteamManager:
                         time.sleep(0.5)
                         use_code_button.click()
                         logger.debug("✓ Кнопка нажата, ожидание появления поля ввода...")
-                        time.sleep(3)
+                        time.sleep(4)  # Увеличено время ожидания
                     except Exception as e:
                         logger.error(f"✗ Ошибка при нажатии кнопки: {e}")
+                        # Сохраняем скриншот для отладки
+                        try:
+                            screenshot_path = f"debug_screenshot_{username}_{int(time.time())}.png"
+                            self.driver.save_screenshot(screenshot_path)
+                            logger.debug(f"Скриншот сохранен: {screenshot_path}")
+                        except:
+                            pass
                         return False
                 else:
-                    logger.debug("Кнопка выбора метода не найдена, возможно поле ввода уже открыто")
+                    logger.warning("⚠️ Кнопка 'Введите код' не найдена!")
+                    logger.warning("   Возможно экран выглядит иначе или уже открыто поле ввода")
+                    # Сохраняем скриншот для отладки
+                    try:
+                        screenshot_path = f"debug_no_button_{username}_{int(time.time())}.png"
+                        self.driver.save_screenshot(screenshot_path)
+                        logger.warning(f"   Скриншот сохранен для анализа: {screenshot_path}")
+                    except:
+                        pass
+                    logger.debug("   Попробую найти поле ввода напрямую...")
 
                 # Теперь ищем поле для ввода кода
                 logger.debug("Поиск поля для ввода кода Steam Guard...")
@@ -366,7 +389,15 @@ class SteamManager:
                         logger.debug(f"Ошибка при поиске input полей: {e}")
 
                 if not code_field:
-                    logger.debug("Поле для ввода кода не найдено, возможно вход успешен")
+                    logger.warning("⚠️ Поле для ввода кода не найдено!")
+                    # Сохраняем скриншот для отладки
+                    try:
+                        screenshot_path = f"debug_no_field_{username}_{int(time.time())}.png"
+                        self.driver.save_screenshot(screenshot_path)
+                        logger.warning(f"   Скриншот сохранен: {screenshot_path}")
+                    except:
+                        pass
+                    logger.debug("   Проверяю успешность входа...")
                     # Проверим успешность входа ниже
                 elif shared_secret:
                     logger.debug("Требуется код Steam Guard, генерируем...")
