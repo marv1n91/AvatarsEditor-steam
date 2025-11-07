@@ -166,8 +166,10 @@ class AccountManager:
                                         if mafile_data:
                                             shared_secret = mafile_data.get('shared_secret', '')
                                             logger.info(f"✓ Строка {line_num}: Загружен shared_secret из {os.path.basename(mafile_path)}")
+                                            logger.debug(f"   shared_secret: {shared_secret[:10]}..." if len(shared_secret) > 10 else f"   shared_secret: {shared_secret}")
                                         else:
                                             shared_secret = ""
+                                            logger.error(f"✗ Строка {line_num}: Не удалось загрузить данные из {os.path.basename(mafile_path)}")
                                 else:
                                     # Абсолютный путь
                                     if os.path.exists(mafile_path):
@@ -175,14 +177,17 @@ class AccountManager:
                                         if mafile_data:
                                             shared_secret = mafile_data.get('shared_secret', '')
                                             logger.info(f"✓ Строка {line_num}: Загружен shared_secret из {os.path.basename(mafile_path)}")
+                                            logger.debug(f"   shared_secret: {shared_secret[:10]}..." if len(shared_secret) > 10 else f"   shared_secret: {shared_secret}")
                                         else:
                                             shared_secret = ""
+                                            logger.error(f"✗ Строка {line_num}: Не удалось загрузить данные из {os.path.basename(mafile_path)}")
                                     else:
                                         logger.warning(f"⚠️ Строка {line_num}: .maFile не найден: {mafile_path}")
                                         shared_secret = ""
 
                             account = Account(username, password, shared_secret)
                             self.accounts.append(account)
+                            logger.debug(f"Аккаунт {username}: shared_secret={'есть' if shared_secret else 'отсутствует'}")
 
             logger.info(f"✓ Загружено аккаунтов: {len(self.accounts)}")
             return self.accounts
