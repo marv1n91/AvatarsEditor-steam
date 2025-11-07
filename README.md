@@ -30,42 +30,18 @@
 
 ```bash
 git clone https://github.com/yourusername/avatarsscript.git
-cd avatarsscript
 ```
 
 ### 2. Установка Google Chrome
 
 Программа использует Google Chrome для автоматизации входа в Steam.
 
-**Linux:**
-```bash
-# Ubuntu/Debian
-sudo apt update
-sudo apt install google-chrome-stable
-
-# Или Chromium
-sudo apt install chromium-browser
-```
-
 **Windows:**
 - Скачайте и установите Google Chrome: https://www.google.com/chrome/
-
-**macOS:**
-```bash
-brew install --cask google-chrome
-```
 
 ### 3. Установка зависимостей Python
 
 ```bash
-pip install -r requirements.txt
-```
-
-Или с использованием виртуального окружения (рекомендуется):
-
-```bash
-python -m venv venv
-source venv/bin/activate  # На Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
@@ -77,13 +53,6 @@ pip install -r requirements.txt
 
 Создайте файл `accounts/accounts.txt` и добавьте ваши аккаунты в одном из форматов:
 
-**Формат без Steam Guard:**
-```
-username1:password1
-username2:password2
-username3:password3
-```
-
 **Формат с Steam Guard (shared secret):**
 ```
 username1:password1:SHAREDKEY123
@@ -91,44 +60,12 @@ username2:password2:SHAREDKEY456
 username3:password3:SHAREDKEY789
 ```
 
-**Формат с .maFile (Steam Desktop Authenticator) - РЕКОМЕНДУЕТСЯ:**
+**Формат с .maFile (Steam Desktop Authenticator):**
 ```
 username1:password1:username1.maFile
 username2:password2:mafiles/username2.maFile
 username3:password3:username3.maFile
 ```
-
-**Пример:**
-```
-mysteamlogin:mypassword123
-testuser:testpass456:ABCDEF123456GHIJK
-user_with_sda:password789:user.maFile
-```
-
-**Примечание:** Строки, начинающиеся с `#`, игнорируются как комментарии.
-
-#### Использование .maFile (рекомендуется)
-
-.maFile - это файлы от [Steam Desktop Authenticator](https://github.com/Jessecar96/SteamDesktopAuthenticator), которые содержат все необходимые данные для Steam Guard.
-
-**Преимущества:**
-- Не нужно вручную копировать shared_secret
-- Один файл содержит все данные аутентификации
-- Проще управлять множеством аккаунтов
-
-**Как использовать:**
-
-1. Установите Steam Desktop Authenticator (SDA)
-2. Экспортируйте .maFile для каждого аккаунта:
-   - В SDA выберите аккаунт
-   - Trade → Export account → Export account files (.maFile)
-   - Сохраните файл в папку `mafiles/`
-3. Добавьте в `accounts/accounts.txt`:
-   ```
-   username:password:username.maFile
-   ```
-
-Программа автоматически найдет файл в папке `mafiles/` и извлечет shared_secret.
 
 ### 2. Добавление аватарок
 
@@ -143,15 +80,6 @@ user_with_sda:password789:user.maFile
 **Требования к изображениям:**
 - Рекомендуемый размер: 184x184 пикселей
 - Максимальный размер: Steam автоматически изменит размер больших изображений
-
-**Пример структуры:**
-```
-avatars/
-├── avatar1.jpg
-├── avatar2.png
-├── avatar3.gif
-└── avatar4.jpg
-```
 
 ### 3. Настройка задержки (опционально)
 
@@ -172,11 +100,6 @@ show_countdown = true
 # Уровень логирования (DEBUG, INFO, WARNING, ERROR)
 log_level = INFO
 ```
-
-**Рекомендации по задержке:**
-- Для 10-20 аккаунтов: 30-60 секунд
-- Для 30-40 аккаунтов: 60-120 секунд (1-2 минуты)
-- Для большего количества: 120+ секунд (2+ минуты)
 
 ## Использование
 
@@ -280,51 +203,6 @@ python main.py --no-countdown
 ✓ Программа завершена!
 ```
 
-## Структура проекта
-
-```
-avatarsscript/
-├── src/
-│   ├── steam_manager.py      # Работа с Steam API
-│   ├── account_manager.py    # Управление аккаунтами
-│   └── avatar_manager.py     # Управление аватарками
-├── accounts/
-│   ├── accounts.txt          # Ваши аккаунты (создайте сами)
-│   └── accounts.txt.example  # Пример формата
-├── avatars/                  # Папка для изображений
-├── mafiles/                  # Папка для .maFile (Steam Desktop Authenticator)
-│   ├── README.md             # Инструкции по использованию
-│   └── example.maFile.template  # Пример структуры
-├── logs/                     # Логи программы
-├── config.ini                # Конфигурационный файл
-├── main.py                   # Главный файл
-├── requirements.txt          # Зависимости
-└── README.md                 # Документация
-```
-
-## Безопасность
-
-### Важные замечания:
-
-1. **Никогда не публикуйте файл с аккаунтами!** Файл `accounts/accounts.txt` автоматически добавлен в `.gitignore`.
-
-2. **Используйте виртуальное окружение** для изоляции зависимостей.
-
-3. **Храните shared secrets в безопасности** - это критически важные данные для доступа к аккаунту.
-
-4. **Используйте программу ответственно** и соблюдайте правила Steam.
-
-## Логирование
-
-Все действия программы логируются в файл `logs/app.log`. Это полезно для отладки и мониторинга.
-
-Пример лога:
-```
-2025-11-07 15:30:45 - INFO - ✓ Успешная авторизация: mysteamlogin
-2025-11-07 15:30:47 - INFO - ✓ Аватарка изменена для mysteamlogin
-2025-11-07 15:30:48 - INFO - ✓ Выход из аккаунта: mysteamlogin
-```
-
 ## Решение проблем
 
 **Столкнулись с проблемой?** Смотрите подробное руководство: [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
@@ -395,17 +273,6 @@ username:password:shared_secret
 steam_manager = SteamManager(headless=False)
 ```
 
-## FAQ
-
-### Почему такая большая задержка между аккаунтами?
-
-По умолчанию установлена задержка в 60 секунд (1 минута) между обработкой аккаунтов. Это сделано для безопасности:
-- Steam может расценить быструю смену аватарок на множестве аккаунтов как подозрительную активность
-- Задержка помогает избежать rate limiting (ограничения количества запросов)
-- Рекомендуется не уменьшать задержку ниже 30 секунд
-
-Вы можете изменить задержку в файле `config.ini` или через аргумент командной строки `--delay`.
-
 ### Как отключить таймер обратного отсчета?
 
 Есть два способа:
@@ -416,14 +283,6 @@ steam_manager = SteamManager(headless=False)
 
 Программа автоматически рассчитывает и показывает примерное время выполнения при запуске.
 
-Примерный расчет:
-- 10 аккаунтов с задержкой 60 сек: ~9 минут
-- 30 аккаунтов с задержкой 60 сек: ~29 минут
-- 40 аккаунтов с задержкой 60 сек: ~39 минут
-
-## Лицензия
-
-MIT License - используйте свободно, но на свой риск.
 
 ## Отказ от ответственности
 
@@ -435,4 +294,3 @@ MIT License - используйте свободно, но на свой рис
 
 ---
 
-**Разработано с использованием Python, Selenium WebDriver и Chrome**
