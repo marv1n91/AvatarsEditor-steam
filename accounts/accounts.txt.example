@@ -1,0 +1,14 @@
+# Примеры форматов для добавления аккаунтов
+#
+# Формат 1 (без Steam Guard):
+# username:password
+#
+# Формат 2 (с Steam Guard shared secret):
+# username:password:shared_secret
+#
+# Примеры:
+# mysteamlogin:mypassword123
+# anotheruser:pass456:ABCDEF123456
+#
+# Раскомментируйте и добавьте свои аккаунты ниже:
+
