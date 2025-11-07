@@ -153,7 +153,6 @@ def main():
         config['show_countdown'] = False
 
     # Инициализация менеджеров
-    steam_manager = SteamManager()
     account_manager = AccountManager('accounts/accounts.txt')
     avatar_manager = AvatarManager('avatars')
 
@@ -208,30 +207,35 @@ def main():
         print(f"{Fore.CYAN}{'─'*60}")
         print(f"{Fore.CYAN}[{i+1}/{len(accounts)}] Обработка аккаунта: {Fore.WHITE}{account.username}")
 
-        # Авторизация
-        print(f"{Fore.YELLOW}  🔐 Авторизация...")
-        if not steam_manager.login(account.username, account.password, account.shared_secret):
-            print(f"{Fore.RED}  ✗ Ошибка авторизации\n")
-            fail_count += 1
-            continue
+        # Создаем новый экземпляр браузера для каждого аккаунта
+        steam_manager = SteamManager()
 
-        # Задержка после авторизации
-        time.sleep(config['delay_after_login'])
+        try:
+            # Авторизация
+            print(f"{Fore.YELLOW}  🔐 Авторизация...")
+            if not steam_manager.login(account.username, account.password, account.shared_secret):
+                print(f"{Fore.RED}  ✗ Ошибка авторизации\n")
+                fail_count += 1
+                continue
 
-        # Смена аватарки
-        avatar_path = selected_avatars[i]
-        avatar_name = os.path.basename(avatar_path)
-        print(f"{Fore.YELLOW}  🖼️  Установка аватарки: {avatar_name}")
+            # Задержка после авторизации
+            time.sleep(config['delay_after_login'])
 
-        if steam_manager.change_avatar(account.username, avatar_path):
-            print(f"{Fore.GREEN}  ✓ Аватарка успешно изменена!")
-            success_count += 1
-        else:
-            print(f"{Fore.RED}  ✗ Не удалось изменить аватарку")
-            fail_count += 1
+            # Смена аватарки
+            avatar_path = selected_avatars[i]
+            avatar_name = os.path.basename(avatar_path)
+            print(f"{Fore.YELLOW}  🖼️  Установка аватарки: {avatar_name}")
 
-        # Выход из аккаунта
-        steam_manager.logout(account.username)
+            if steam_manager.change_avatar(account.username, avatar_path):
+                print(f"{Fore.GREEN}  ✓ Аватарка успешно изменена!")
+                success_count += 1
+            else:
+                print(f"{Fore.RED}  ✗ Не удалось изменить аватарку")
+                fail_count += 1
+
+        finally:
+            # Полностью закрываем браузер после каждого аккаунта
+            steam_manager.logout_all()
 
         # Задержка между аккаунтами
         if i < len(accounts) - 1:
@@ -253,9 +257,6 @@ def main():
     print(f"{Fore.RED}   ✗ Ошибок: {fail_count}")
     print(f"{Fore.CYAN}   📊 Процент успеха: {Fore.WHITE}{(success_count / len(accounts) * 100):.1f}%")
     print(f"{Fore.CYAN}{'='*60}\n")
-
-    # Выход из всех оставшихся сессий
-    steam_manager.logout_all()
 
     print(f"{Fore.GREEN}✓ Программа завершена!")
 
