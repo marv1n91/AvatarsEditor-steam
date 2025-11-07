@@ -235,46 +235,81 @@ class SteamManager:
 
                 # Пробуем разные варианты кнопок для выбора ввода кода
                 use_code_button = None
-                button_selectors = [
-                    "//div[contains(text(), 'code')]",
-                    "//div[contains(text(), 'authenticator')]",
-                    "//button[contains(text(), 'code')]",
-                    "//div[contains(@class, 'ConfirmationEntry')]",
-                    "[class*='ConfirmationEntry']",
-                    "div[data-panel-id*='code']"
+
+                # Сначала пробуем XPath с текстом (на русском и английском)
+                text_selectors = [
+                    "//div[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ', 'abcdefghijklmnopqrstuvwxyzабвгдежзийклмнопрстуфхцчшщъыьэюя'), 'введите код')]",
+                    "//div[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'enter code')]",
+                    "//div[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'use code')]",
+                    "//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ', 'abcdefghijklmnopqrstuvwxyzабвгдежзийклмнопрстуфхцчшщъыьэюя'), 'введите код')]",
+                    "//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'enter code')]",
                 ]
 
-                for selector in button_selectors:
+                # Пробуем найти по тексту
+                for selector in text_selectors:
                     try:
-                        if selector.startswith("//"):
-                            elements = self.driver.find_elements(By.XPATH, selector)
-                        else:
-                            elements = self.driver.find_elements(By.CSS_SELECTOR, selector)
-
+                        elements = self.driver.find_elements(By.XPATH, selector)
                         if elements:
-                            logger.debug(f"Найдено элементов по селектору '{selector}': {len(elements)}")
-                            # Ищем кликабельный элемент
+                            logger.debug(f"Найдено {len(elements)} элементов по селектору с текстом")
                             for elem in elements:
                                 try:
-                                    text = elem.text.lower()
-                                    logger.debug(f"  Текст элемента: {text[:100]}")
-                                    if 'code' in text or 'authenticator' in text or 'guard' in text.lower():
+                                    if elem.is_displayed():
                                         use_code_button = elem
-                                        logger.debug(f"✓ Найдена кнопка для ввода кода!")
+                                        logger.debug(f"✓ Найдена кнопка! Текст: {elem.text}")
                                         break
                                 except:
                                     continue
-
-                        if use_code_button:
-                            break
+                            if use_code_button:
+                                break
                     except:
                         continue
 
+                # Если не нашли по тексту, ищем все кликабельные элементы
+                if not use_code_button:
+                    logger.debug("Поиск по тексту не дал результатов, ищем все видимые элементы...")
+                    try:
+                        # Ищем все div и button элементы
+                        all_clickable = self.driver.find_elements(By.XPATH, "//div | //button")
+                        logger.debug(f"Найдено всего элементов: {len(all_clickable)}")
+
+                        for elem in all_clickable:
+                            try:
+                                if not elem.is_displayed():
+                                    continue
+
+                                text = elem.text.lower().strip()
+                                if not text:
+                                    continue
+
+                                # Ищем ключевые слова на русском и английском
+                                keywords = ['введите код', 'ввести код', 'enter code', 'use code', 'authenticator', 'guard code']
+                                for keyword in keywords:
+                                    if keyword in text:
+                                        use_code_button = elem
+                                        logger.debug(f"✓ Найдена кнопка по ключевому слову '{keyword}'! Текст: {text[:100]}")
+                                        break
+
+                                if use_code_button:
+                                    break
+                            except:
+                                continue
+
+                    except Exception as e:
+                        logger.debug(f"Ошибка при поиске элементов: {e}")
+
                 # Если нашли кнопку выбора метода - нажимаем
                 if use_code_button:
-                    logger.debug("Нажатие кнопки 'Использовать код'...")
-                    use_code_button.click()
-                    time.sleep(2)
+                    logger.debug("Нажатие кнопки 'Введите код'...")
+                    try:
+                        # Прокручиваем к элементу если нужно
+                        self.driver.execute_script("arguments[0].scrollIntoView(true);", use_code_button)
+                        time.sleep(0.5)
+                        use_code_button.click()
+                        logger.debug("✓ Кнопка нажата, ожидание появления поля ввода...")
+                        time.sleep(3)
+                    except Exception as e:
+                        logger.error(f"✗ Ошибка при нажатии кнопки: {e}")
+                        return False
                 else:
                     logger.debug("Кнопка выбора метода не найдена, возможно поле ввода уже открыто")
 
@@ -288,20 +323,47 @@ class SteamManager:
                     "input[autocomplete='one-time-code']",
                     "input.Focusable",
                     "input[name*='code']",
-                    "input[placeholder*='code']"
+                    "input[placeholder*='code']",
+                    "input[class*='Code']",
+                    "input[id*='code']"
                 ]
 
+                # Ждем дольше для появления поля
                 for selector in input_selectors:
                     try:
-                        field = WebDriverWait(self.driver, 5).until(
+                        logger.debug(f"Пробую селектор: {selector}")
+                        field = WebDriverWait(self.driver, 10).until(
                             EC.presence_of_element_located((By.CSS_SELECTOR, selector))
                         )
                         if field and field.is_displayed():
                             code_field = field
                             logger.debug(f"✓ Найдено поле ввода по селектору: {selector}")
+                            logger.debug(f"  HTML: {field.get_attribute('outerHTML')[:200]}")
                             break
-                    except:
+                    except Exception as e:
+                        logger.debug(f"  Селектор {selector} не сработал: {e}")
                         continue
+
+                # Если не нашли, попробуем найти любое видимое текстовое поле
+                if not code_field:
+                    logger.debug("Стандартные селекторы не сработали, ищем любые input поля...")
+                    try:
+                        all_inputs = self.driver.find_elements(By.TAG_NAME, "input")
+                        logger.debug(f"Найдено всего input полей: {len(all_inputs)}")
+                        for inp in all_inputs:
+                            try:
+                                if inp.is_displayed() and inp.is_enabled():
+                                    inp_type = inp.get_attribute('type')
+                                    inp_class = inp.get_attribute('class')
+                                    logger.debug(f"  Input: type={inp_type}, class={inp_class}")
+                                    if inp_type in ['text', 'tel', None]:
+                                        code_field = inp
+                                        logger.debug(f"✓ Найдено подходящее поле ввода!")
+                                        break
+                            except:
+                                continue
+                    except Exception as e:
+                        logger.debug(f"Ошибка при поиске input полей: {e}")
 
                 if not code_field:
                     logger.debug("Поле для ввода кода не найдено, возможно вход успешен")
