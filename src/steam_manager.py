@@ -225,14 +225,88 @@ class SteamManager:
             login_button.click()
 
             # Ждем появления формы Steam Guard или успешного входа
-            time.sleep(3)
+            logger.debug("Ожидание экрана подтверждения...")
+            time.sleep(5)
 
             # Проверяем, требуется ли код Steam Guard
             try:
-                # Ищем поле для ввода кода
-                code_field = self.driver.find_element(By.CSS_SELECTOR, "input[type='text'].Focusable")
+                # Сначала проверяем, есть ли экран выбора метода подтверждения
+                logger.debug("Поиск кнопки для ввода кода из приложения...")
 
-                if shared_secret:
+                # Пробуем разные варианты кнопок для выбора ввода кода
+                use_code_button = None
+                button_selectors = [
+                    "//div[contains(text(), 'code')]",
+                    "//div[contains(text(), 'authenticator')]",
+                    "//button[contains(text(), 'code')]",
+                    "//div[contains(@class, 'ConfirmationEntry')]",
+                    "[class*='ConfirmationEntry']",
+                    "div[data-panel-id*='code']"
+                ]
+
+                for selector in button_selectors:
+                    try:
+                        if selector.startswith("//"):
+                            elements = self.driver.find_elements(By.XPATH, selector)
+                        else:
+                            elements = self.driver.find_elements(By.CSS_SELECTOR, selector)
+
+                        if elements:
+                            logger.debug(f"Найдено элементов по селектору '{selector}': {len(elements)}")
+                            # Ищем кликабельный элемент
+                            for elem in elements:
+                                try:
+                                    text = elem.text.lower()
+                                    logger.debug(f"  Текст элемента: {text[:100]}")
+                                    if 'code' in text or 'authenticator' in text or 'guard' in text.lower():
+                                        use_code_button = elem
+                                        logger.debug(f"✓ Найдена кнопка для ввода кода!")
+                                        break
+                                except:
+                                    continue
+
+                        if use_code_button:
+                            break
+                    except:
+                        continue
+
+                # Если нашли кнопку выбора метода - нажимаем
+                if use_code_button:
+                    logger.debug("Нажатие кнопки 'Использовать код'...")
+                    use_code_button.click()
+                    time.sleep(2)
+                else:
+                    logger.debug("Кнопка выбора метода не найдена, возможно поле ввода уже открыто")
+
+                # Теперь ищем поле для ввода кода
+                logger.debug("Поиск поля для ввода кода Steam Guard...")
+
+                # Пробуем разные селекторы для поля ввода
+                code_field = None
+                input_selectors = [
+                    "input[type='text']",
+                    "input[autocomplete='one-time-code']",
+                    "input.Focusable",
+                    "input[name*='code']",
+                    "input[placeholder*='code']"
+                ]
+
+                for selector in input_selectors:
+                    try:
+                        field = WebDriverWait(self.driver, 5).until(
+                            EC.presence_of_element_located((By.CSS_SELECTOR, selector))
+                        )
+                        if field and field.is_displayed():
+                            code_field = field
+                            logger.debug(f"✓ Найдено поле ввода по селектору: {selector}")
+                            break
+                    except:
+                        continue
+
+                if not code_field:
+                    logger.debug("Поле для ввода кода не найдено, возможно вход успешен")
+                    # Проверим успешность входа ниже
+                elif shared_secret:
                     logger.debug("Требуется код Steam Guard, генерируем...")
                     guard_code = self.steam_guard.generate_code(shared_secret)
 
@@ -243,19 +317,26 @@ class SteamManager:
                     logger.debug(f"Ввод кода Steam Guard: {guard_code}")
                     code_field.clear()
                     code_field.send_keys(guard_code)
-                    time.sleep(0.5)
+                    time.sleep(1)
 
                     # Нажимаем кнопку подтверждения
-                    submit_button = self.driver.find_element(By.CSS_SELECTOR, "button[type='submit']")
-                    submit_button.click()
+                    logger.debug("Поиск кнопки подтверждения...")
+                    try:
+                        submit_button = self.driver.find_element(By.CSS_SELECTOR, "button[type='submit']")
+                        submit_button.click()
+                        logger.debug("✓ Кнопка подтверждения нажата")
+                    except:
+                        logger.debug("Кнопка submit не найдена, код может отправиться автоматически")
+
                     time.sleep(3)
                 else:
                     logger.error("✗ Требуется код Steam Guard, но shared_secret не предоставлен")
                     return False
 
-            except NoSuchElementException:
+            except Exception as e:
                 # Код Steam Guard не требуется или уже вошли
-                logger.debug("Steam Guard не требуется")
+                logger.debug(f"Исключение при обработке Steam Guard: {str(e)}")
+                logger.debug("Возможно, Steam Guard не требуется")
 
             # Проверяем успешность входа
             time.sleep(2)
