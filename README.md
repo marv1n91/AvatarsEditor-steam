@@ -66,13 +66,44 @@ username2:password2:SHAREDKEY456
 username3:password3:SHAREDKEY789
 ```
 
+**Формат с .maFile (Steam Desktop Authenticator) - РЕКОМЕНДУЕТСЯ:**
+```
+username1:password1:username1.maFile
+username2:password2:mafiles/username2.maFile
+username3:password3:username3.maFile
+```
+
 **Пример:**
 ```
 mysteamlogin:mypassword123
 testuser:testpass456:ABCDEF123456GHIJK
+user_with_sda:password789:user.maFile
 ```
 
 **Примечание:** Строки, начинающиеся с `#`, игнорируются как комментарии.
+
+#### Использование .maFile (рекомендуется)
+
+.maFile - это файлы от [Steam Desktop Authenticator](https://github.com/Jessecar96/SteamDesktopAuthenticator), которые содержат все необходимые данные для Steam Guard.
+
+**Преимущества:**
+- Не нужно вручную копировать shared_secret
+- Один файл содержит все данные аутентификации
+- Проще управлять множеством аккаунтов
+
+**Как использовать:**
+
+1. Установите Steam Desktop Authenticator (SDA)
+2. Экспортируйте .maFile для каждого аккаунта:
+   - В SDA выберите аккаунт
+   - Trade → Export account → Export account files (.maFile)
+   - Сохраните файл в папку `mafiles/`
+3. Добавьте в `accounts/accounts.txt`:
+   ```
+   username:password:username.maFile
+   ```
+
+Программа автоматически найдет файл в папке `mafiles/` и извлечет shared_secret.
 
 ### 2. Добавление аватарок
 
@@ -236,6 +267,9 @@ avatarsscript/
 │   ├── accounts.txt          # Ваши аккаунты (создайте сами)
 │   └── accounts.txt.example  # Пример формата
 ├── avatars/                  # Папка для изображений
+├── mafiles/                  # Папка для .maFile (Steam Desktop Authenticator)
+│   ├── README.md             # Инструкции по использованию
+│   └── example.maFile.template  # Пример структуры
 ├── logs/                     # Логи программы
 ├── config.ini                # Конфигурационный файл
 ├── main.py                   # Главный файл

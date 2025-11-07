@@ -1,0 +1,22 @@
+{
+  "shared_secret": "YOUR_SHARED_SECRET_HERE",
+  "serial_number": "",
+  "revocation_code": "R12345",
+  "uri": "otpauth://totp/Steam:username?secret=YOUR_SECRET&issuer=Steam",
+  "server_time": 1699999999,
+  "account_name": "username",
+  "token_gid": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "identity_secret": "YOUR_IDENTITY_SECRET_HERE",
+  "secret_1": "xxxxxxxxxxxxxxxx",
+  "status": 1,
+  "device_id": "android:xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "fully_enrolled": true,
+  "Session": {
+    "SessionID": "xxxxxxxxxxxxxxxxxxxxxxxx",
+    "SteamLogin": "76561198000000000||xxxxxxxxxxxx",
+    "SteamLoginSecure": "76561198000000000||xxxxxxxxxxxx",
+    "WebCookie": "xxxxxxxxxxxxxxxxxxxxxxxx",
+    "OAuthToken": "xxxxxxxxxxxxxxxxxxxxxxxx",
+    "SteamID": 76561198000000000
+  }
+}

@@ -37,6 +37,44 @@ class AccountManager:
         self.accounts_file = accounts_file
         self.accounts: List[Account] = []
 
+    @staticmethod
+    def load_mafile(mafile_path: str) -> Dict:
+        """
+        Загрузка данных из .maFile (Steam Desktop Authenticator)
+
+        Args:
+            mafile_path: Путь к .maFile
+
+        Returns:
+            Словарь с данными аутентификации
+        """
+        try:
+            with open(mafile_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+
+            # Проверяем наличие необходимых полей
+            if 'shared_secret' not in data:
+                logger.warning(f"⚠️ В файле {mafile_path} отсутствует shared_secret")
+                return {}
+
+            logger.debug(f"✓ Загружен .maFile: {mafile_path}")
+            return {
+                'shared_secret': data.get('shared_secret', ''),
+                'identity_secret': data.get('identity_secret', ''),
+                'account_name': data.get('account_name', ''),
+                'steamid': data.get('Session', {}).get('SteamID', '')
+            }
+
+        except FileNotFoundError:
+            logger.error(f"✗ Файл .maFile не найден: {mafile_path}")
+            return {}
+        except json.JSONDecodeError:
+            logger.error(f"✗ Ошибка парсинга .maFile: {mafile_path}")
+            return {}
+        except Exception as e:
+            logger.error(f"✗ Ошибка загрузки .maFile {mafile_path}: {str(e)}")
+            return {}
+
     def load_accounts(self) -> List[Account]:
         """
         Загрузка аккаунтов из файла
@@ -44,7 +82,8 @@ class AccountManager:
         Поддерживаемые форматы:
         1. username:password
         2. username:password:shared_secret
-        3. JSON формат: {"username": "user", "password": "pass", "shared_secret": "secret"}
+        3. username:password:path/to/file.maFile (загружает shared_secret из .maFile)
+        4. JSON формат: {"username": "user", "password": "pass", "shared_secret": "secret"}
 
         Returns:
             Список загруженных аккаунтов
@@ -84,7 +123,7 @@ class AccountManager:
                 else:
                     # Загрузка из текстового формата
                     lines = content.split('\n')
-                    for line in lines:
+                    for line_num, line in enumerate(lines, 1):
                         line = line.strip()
                         if not line or line.startswith('#'):
                             continue
@@ -94,6 +133,53 @@ class AccountManager:
                             username = parts[0]
                             password = parts[1]
                             shared_secret = parts[2] if len(parts) > 2 else ""
+
+                            # Проверяем, является ли shared_secret путем к .maFile
+                            if shared_secret.endswith('.maFile'):
+                                mafile_path = shared_secret
+
+                                # Если путь относительный, ищем в mafiles/ и в корне
+                                if not os.path.isabs(mafile_path):
+                                    # Пробуем найти в mafiles/
+                                    mafiles_dir = os.path.join(os.path.dirname(self.accounts_file), '..', 'mafiles')
+                                    potential_paths = [
+                                        mafile_path,  # Как указано
+                                        os.path.join('mafiles', mafile_path),
+                                        os.path.join(mafiles_dir, mafile_path),
+                                        os.path.join(os.path.dirname(self.accounts_file), mafile_path)
+                                    ]
+
+                                    found = False
+                                    for path in potential_paths:
+                                        if os.path.exists(path):
+                                            mafile_path = path
+                                            found = True
+                                            break
+
+                                    if not found:
+                                        logger.warning(f"⚠️ Строка {line_num}: .maFile не найден: {shared_secret}")
+                                        logger.warning(f"   Искали в: {', '.join(potential_paths)}")
+                                        shared_secret = ""
+                                    else:
+                                        # Загружаем данные из .maFile
+                                        mafile_data = self.load_mafile(mafile_path)
+                                        if mafile_data:
+                                            shared_secret = mafile_data.get('shared_secret', '')
+                                            logger.info(f"✓ Строка {line_num}: Загружен shared_secret из {os.path.basename(mafile_path)}")
+                                        else:
+                                            shared_secret = ""
+                                else:
+                                    # Абсолютный путь
+                                    if os.path.exists(mafile_path):
+                                        mafile_data = self.load_mafile(mafile_path)
+                                        if mafile_data:
+                                            shared_secret = mafile_data.get('shared_secret', '')
+                                            logger.info(f"✓ Строка {line_num}: Загружен shared_secret из {os.path.basename(mafile_path)}")
+                                        else:
+                                            shared_secret = ""
+                                    else:
+                                        logger.warning(f"⚠️ Строка {line_num}: .maFile не найден: {mafile_path}")
+                                        shared_secret = ""
 
                             account = Account(username, password, shared_secret)
                             self.accounts.append(account)

@@ -41,6 +41,11 @@ logs/
 accounts/*.txt
 !accounts/*.example
 
+# maFiles (КРИТИЧЕСКИ ВАЖНО - содержат секретные ключи!)
+mafiles/*.maFile
+!mafiles/*.template
+!mafiles/README.md
+
 # Avatars
 avatars/*
 !avatars/.gitkeep
