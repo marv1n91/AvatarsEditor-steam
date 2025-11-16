@@ -534,7 +534,7 @@ class SteamManager:
             logger.error(f"✗ Ошибка смены аватарки: {str(e)}")
             return False
 
-    def update_profile(self, username: str, profile_name: str = "", real_name: str = "", about_me: str = "") -> bool:
+    def update_profile(self, username: str, profile_name: str = "", real_name: str = "", about_me: str = "", country: str = "") -> bool:
         """
         Обновление информации профиля
 
@@ -543,6 +543,7 @@ class SteamManager:
             profile_name: Имя профиля (PersonaName)
             real_name: Настоящее имя
             about_me: Текст "О себе" (Summary)
+            country: Страна (например, "FI" для Finland)
 
         Returns:
             True если обновление успешно
@@ -551,7 +552,7 @@ class SteamManager:
             logger.error(f"✗ Аккаунт {username} не авторизован")
             return False
 
-        if not profile_name and not real_name and not about_me:
+        if not profile_name and not real_name and not about_me and not country:
             logger.warning("⚠️ Нет данных для обновления профиля")
             return False
 
@@ -606,7 +607,7 @@ class SteamManager:
                     logger.error(f"✗ Ошибка установки текста 'О себе': {str(e)}")
                     success = False
 
-            # Сохраняем изменения
+            # Сохраняем изменения основного профиля
             logger.debug("Поиск кнопки сохранения...")
             try:
                 # Ищем кнопку сохранения
@@ -654,6 +655,71 @@ class SteamManager:
             except Exception as e:
                 logger.error(f"✗ Ошибка при сохранении профиля: {str(e)}")
                 success = False
+
+            # Устанавливаем страну (если указана)
+            if country:
+                logger.debug(f"Установка страны: {country}")
+                try:
+                    # Переходим на страницу настроек
+                    self.driver.get("https://steamcommunity.com/my/edit/settings")
+                    time.sleep(2)
+
+                    # Ищем dropdown со странами
+                    country_select = None
+                    country_selectors = [
+                        "select[name='country']",
+                        "select#country",
+                        "//select[contains(@name, 'country')]"
+                    ]
+
+                    for selector in country_selectors:
+                        try:
+                            if selector.startswith("//"):
+                                country_select = self.driver.find_element(By.XPATH, selector)
+                            else:
+                                country_select = self.driver.find_element(By.CSS_SELECTOR, selector)
+                            if country_select:
+                                logger.debug(f"✓ Найден dropdown стран")
+                                break
+                        except:
+                            continue
+
+                    if country_select:
+                        # Выбираем страну из dropdown
+                        from selenium.webdriver.support.ui import Select
+                        select = Select(country_select)
+
+                        # Пробуем выбрать по коду или имени
+                        try:
+                            # Сначала пробуем по value (код страны, например "FI")
+                            select.select_by_value(country)
+                            logger.debug(f"✓ Страна выбрана по коду: {country}")
+                        except:
+                            try:
+                                # Если не получилось, пробуем по видимому тексту
+                                select.select_by_visible_text(country)
+                                logger.debug(f"✓ Страна выбрана по имени: {country}")
+                            except Exception as e:
+                                logger.error(f"✗ Не удалось выбрать страну '{country}': {e}")
+                                success = False
+
+                        time.sleep(0.5)
+
+                        # Сохраняем изменения
+                        try:
+                            save_button = self.driver.find_element(By.CSS_SELECTOR, "button[type='submit']")
+                            save_button.click()
+                            time.sleep(2)
+                            logger.debug("✓ Страна сохранена")
+                        except:
+                            logger.warning("⚠️ Кнопка сохранения страны не найдена")
+                    else:
+                        logger.error("✗ Dropdown стран не найден")
+                        success = False
+
+                except Exception as e:
+                    logger.error(f"✗ Ошибка установки страны: {str(e)}")
+                    success = False
 
             return success
 

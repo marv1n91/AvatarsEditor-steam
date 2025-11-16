@@ -245,26 +245,28 @@ def main():
 
             # Обновление профиля
             profile_data = profile_data_list[i]
-            if profile_data['profile_name'] or profile_data['real_name'] or profile_data['about_me']:
-                print(f"{Fore.YELLOW}  📝 Обновление профиля...")
-                if profile_data['profile_name']:
-                    print(f"{Fore.YELLOW}     Имя: {profile_data['profile_name']}")
-                if profile_data['real_name']:
-                    print(f"{Fore.YELLOW}     Настоящее имя: {profile_data['real_name']}")
-                if profile_data['about_me']:
-                    print(f"{Fore.YELLOW}     О себе: {profile_data['about_me'][:50]}...")
+            # Всегда обновляем профиль (минимум страну)
+            print(f"{Fore.YELLOW}  📝 Обновление профиля...")
+            if profile_data['profile_name']:
+                print(f"{Fore.YELLOW}     Имя: {profile_data['profile_name']}")
+            if profile_data['real_name']:
+                print(f"{Fore.YELLOW}     Настоящее имя: {profile_data['real_name']}")
+            if profile_data['about_me']:
+                print(f"{Fore.YELLOW}     О себе: {profile_data['about_me'][:50]}...")
+            print(f"{Fore.YELLOW}     Страна: Finland")
 
-                profile_success = steam_manager.update_profile(
-                    account.username,
-                    profile_name=profile_data['profile_name'],
-                    real_name=profile_data['real_name'],
-                    about_me=profile_data['about_me']
-                )
+            profile_success = steam_manager.update_profile(
+                account.username,
+                profile_name=profile_data['profile_name'],
+                real_name=profile_data['real_name'],
+                about_me=profile_data['about_me'],
+                country="FI"  # Finland
+            )
 
-                if profile_success:
-                    print(f"{Fore.GREEN}  ✓ Профиль обновлен!")
-                else:
-                    print(f"{Fore.RED}  ✗ Не удалось обновить профиль")
+            if profile_success:
+                print(f"{Fore.GREEN}  ✓ Профиль обновлен!")
+            else:
+                print(f"{Fore.RED}  ✗ Не удалось обновить профиль")
 
             # Подсчет успехов
             if avatar_success:
