@@ -219,7 +219,9 @@ def main():
         print(f"{Fore.CYAN}[{i+1}/{len(accounts)}] Обработка аккаунта: {Fore.WHITE}{account.username}")
 
         # Создаем новый экземпляр браузера для каждого аккаунта
-        steam_manager = SteamManager()
+        # headless=False - браузер будет виден (GUI режим)
+        # headless=True - браузер работает в фоне (быстрее)
+        steam_manager = SteamManager(headless=False)
 
         try:
             # Авторизация
