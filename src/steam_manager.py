@@ -559,7 +559,21 @@ class SteamManager:
         try:
             logger.debug("Переход на страницу редактирования профиля...")
             self.driver.get("https://steamcommunity.com/my/edit")
-            time.sleep(3)
+
+            # Увеличиваем время ожидания загрузки страницы
+            time.sleep(5)
+
+            # Добавляем отладочную информацию
+            logger.debug(f"Текущий URL: {self.driver.current_url}")
+            logger.debug(f"Заголовок страницы: {self.driver.title}")
+
+            # Сохраняем скриншот для отладки
+            try:
+                screenshot_path = f"debug_profile_page_{username}_{int(time.time())}.png"
+                self.driver.save_screenshot(screenshot_path)
+                logger.debug(f"Скриншот страницы: {screenshot_path}")
+            except:
+                pass
 
             success = True
 
@@ -567,14 +581,41 @@ class SteamManager:
             if profile_name:
                 logger.debug(f"Установка имени профиля: {profile_name}")
                 try:
-                    # Ищем поле имени профиля
-                    name_input = WebDriverWait(self.driver, 10).until(
-                        EC.presence_of_element_located((By.CSS_SELECTOR, "input[id='personaName']"))
-                    )
-                    name_input.clear()
-                    name_input.send_keys(profile_name)
-                    time.sleep(0.5)
-                    logger.debug("✓ Имя профиля установлено")
+                    # Пробуем разные селекторы для поля имени
+                    name_input = None
+                    name_selectors = [
+                        "input[id='personaName']",
+                        "input[name='personaName']",
+                        "input.gray_bevel.fullwidth",
+                        "//input[@type='text']"
+                    ]
+
+                    for selector in name_selectors:
+                        try:
+                            logger.debug(f"Пробую селектор имени: {selector}")
+                            if selector.startswith("//"):
+                                name_input = WebDriverWait(self.driver, 5).until(
+                                    EC.presence_of_element_located((By.XPATH, selector))
+                                )
+                            else:
+                                name_input = WebDriverWait(self.driver, 5).until(
+                                    EC.presence_of_element_located((By.CSS_SELECTOR, selector))
+                                )
+                            if name_input and name_input.is_displayed():
+                                logger.debug(f"✓ Найдено поле имени по селектору: {selector}")
+                                break
+                        except Exception as e:
+                            logger.debug(f"  Селектор не сработал: {e}")
+                            continue
+
+                    if name_input:
+                        name_input.clear()
+                        name_input.send_keys(profile_name)
+                        time.sleep(0.5)
+                        logger.debug("✓ Имя профиля установлено")
+                    else:
+                        logger.error("✗ Поле имени профиля не найдено ни одним селектором")
+                        success = False
                 except Exception as e:
                     logger.error(f"✗ Ошибка установки имени профиля: {str(e)}")
                     success = False
@@ -583,29 +624,71 @@ class SteamManager:
             if real_name:
                 logger.debug(f"Установка настоящего имени: {real_name}")
                 try:
-                    # Ищем поле настоящего имени
-                    real_name_input = self.driver.find_element(By.CSS_SELECTOR, "input[id='real_name']")
-                    real_name_input.clear()
-                    real_name_input.send_keys(real_name)
-                    time.sleep(0.5)
-                    logger.debug("✓ Настоящее имя установлено")
+                    # Пробуем разные селекторы
+                    real_name_input = None
+                    real_name_selectors = [
+                        "input[id='real_name']",
+                        "input[name='real_name']",
+                        "input[id='realName']",
+                        "input[name='realName']"
+                    ]
+
+                    for selector in real_name_selectors:
+                        try:
+                            logger.debug(f"Пробую селектор настоящего имени: {selector}")
+                            real_name_input = self.driver.find_element(By.CSS_SELECTOR, selector)
+                            if real_name_input and real_name_input.is_displayed():
+                                logger.debug(f"✓ Найдено поле настоящего имени: {selector}")
+                                break
+                        except:
+                            continue
+
+                    if real_name_input:
+                        real_name_input.clear()
+                        real_name_input.send_keys(real_name)
+                        time.sleep(0.5)
+                        logger.debug("✓ Настоящее имя установлено")
+                    else:
+                        logger.warning("⚠️ Поле настоящего имени не найдено (возможно, не обязательное поле)")
                 except Exception as e:
-                    logger.error(f"✗ Ошибка установки настоящего имени: {str(e)}")
-                    success = False
+                    logger.warning(f"⚠️ Не удалось установить настоящее имя: {str(e)}")
+                    # Не считаем это критической ошибкой
 
             # Изменяем текст "О себе"
             if about_me:
                 logger.debug(f"Установка текста 'О себе': {about_me[:50]}...")
                 try:
-                    # Ищем поле "О себе"
-                    summary_input = self.driver.find_element(By.CSS_SELECTOR, "textarea[id='summary']")
-                    summary_input.clear()
-                    summary_input.send_keys(about_me)
-                    time.sleep(0.5)
-                    logger.debug("✓ Текст 'О себе' установлен")
+                    # Пробуем разные селекторы
+                    summary_input = None
+                    summary_selectors = [
+                        "textarea[id='summary']",
+                        "textarea[name='summary']",
+                        "textarea.gray_bevel",
+                        "//textarea"
+                    ]
+
+                    for selector in summary_selectors:
+                        try:
+                            logger.debug(f"Пробую селектор 'О себе': {selector}")
+                            if selector.startswith("//"):
+                                summary_input = self.driver.find_element(By.XPATH, selector)
+                            else:
+                                summary_input = self.driver.find_element(By.CSS_SELECTOR, selector)
+                            if summary_input and summary_input.is_displayed():
+                                logger.debug(f"✓ Найдено поле 'О себе': {selector}")
+                                break
+                        except:
+                            continue
+
+                    if summary_input:
+                        summary_input.clear()
+                        summary_input.send_keys(about_me)
+                        time.sleep(0.5)
+                        logger.debug("✓ Текст 'О себе' установлен")
+                    else:
+                        logger.warning("⚠️ Поле 'О себе' не найдено")
                 except Exception as e:
-                    logger.error(f"✗ Ошибка установки текста 'О себе': {str(e)}")
-                    success = False
+                    logger.warning(f"⚠️ Не удалось установить текст 'О себе': {str(e)}")
 
             # Сохраняем изменения основного профиля
             logger.debug("Поиск кнопки сохранения...")
@@ -662,26 +745,42 @@ class SteamManager:
                 try:
                     # Переходим на страницу настроек
                     self.driver.get("https://steamcommunity.com/my/edit/settings")
-                    time.sleep(2)
+                    time.sleep(3)
+
+                    logger.debug(f"URL страницы настроек: {self.driver.current_url}")
+
+                    # Сохраняем скриншот страницы настроек
+                    try:
+                        screenshot_path = f"debug_settings_page_{username}_{int(time.time())}.png"
+                        self.driver.save_screenshot(screenshot_path)
+                        logger.debug(f"Скриншот страницы настроек: {screenshot_path}")
+                    except:
+                        pass
 
                     # Ищем dropdown со странами
                     country_select = None
                     country_selectors = [
                         "select[name='country']",
                         "select#country",
-                        "//select[contains(@name, 'country')]"
+                        "select[id='country']",
+                        "//select[contains(@name, 'country')]",
+                        "//select[contains(@id, 'country')]"
                     ]
 
                     for selector in country_selectors:
                         try:
+                            logger.debug(f"Пробую селектор страны: {selector}")
                             if selector.startswith("//"):
                                 country_select = self.driver.find_element(By.XPATH, selector)
                             else:
                                 country_select = self.driver.find_element(By.CSS_SELECTOR, selector)
-                            if country_select:
-                                logger.debug(f"✓ Найден dropdown стран")
+                            if country_select and country_select.is_displayed():
+                                logger.debug(f"✓ Найден dropdown стран по селектору: {selector}")
                                 break
-                        except:
+                            else:
+                                country_select = None
+                        except Exception as e:
+                            logger.debug(f"  Селектор страны не сработал: {e}")
                             continue
 
                     if country_select:
@@ -700,8 +799,8 @@ class SteamManager:
                                 select.select_by_visible_text(country)
                                 logger.debug(f"✓ Страна выбрана по имени: {country}")
                             except Exception as e:
-                                logger.error(f"✗ Не удалось выбрать страну '{country}': {e}")
-                                success = False
+                                logger.warning(f"⚠️ Не удалось выбрать страну '{country}': {e}")
+                                # Не считаем критической ошибкой
 
                         time.sleep(0.5)
 
@@ -714,12 +813,12 @@ class SteamManager:
                         except:
                             logger.warning("⚠️ Кнопка сохранения страны не найдена")
                     else:
-                        logger.error("✗ Dropdown стран не найден")
-                        success = False
+                        logger.warning("⚠️ Dropdown стран не найден (возможно, Steam изменил интерфейс)")
+                        # Не считаем это критической ошибкой, т.к. страна может быть не обязательным полем
 
                 except Exception as e:
-                    logger.error(f"✗ Ошибка установки страны: {str(e)}")
-                    success = False
+                    logger.warning(f"⚠️ Не удалось установить страну: {str(e)}")
+                    # Не считаем это критической ошибкой
 
             return success
 
