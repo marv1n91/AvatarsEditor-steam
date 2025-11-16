@@ -534,6 +534,136 @@ class SteamManager:
             logger.error(f"✗ Ошибка смены аватарки: {str(e)}")
             return False
 
+    def update_profile(self, username: str, profile_name: str = "", real_name: str = "", about_me: str = "") -> bool:
+        """
+        Обновление информации профиля
+
+        Args:
+            username: Логин Steam (для проверки)
+            profile_name: Имя профиля (PersonaName)
+            real_name: Настоящее имя
+            about_me: Текст "О себе" (Summary)
+
+        Returns:
+            True если обновление успешно
+        """
+        if self.current_username != username:
+            logger.error(f"✗ Аккаунт {username} не авторизован")
+            return False
+
+        if not profile_name and not real_name and not about_me:
+            logger.warning("⚠️ Нет данных для обновления профиля")
+            return False
+
+        try:
+            logger.debug("Переход на страницу редактирования профиля...")
+            self.driver.get("https://steamcommunity.com/my/edit")
+            time.sleep(3)
+
+            success = True
+
+            # Изменяем имя профиля
+            if profile_name:
+                logger.debug(f"Установка имени профиля: {profile_name}")
+                try:
+                    # Ищем поле имени профиля
+                    name_input = WebDriverWait(self.driver, 10).until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, "input[id='personaName']"))
+                    )
+                    name_input.clear()
+                    name_input.send_keys(profile_name)
+                    time.sleep(0.5)
+                    logger.debug("✓ Имя профиля установлено")
+                except Exception as e:
+                    logger.error(f"✗ Ошибка установки имени профиля: {str(e)}")
+                    success = False
+
+            # Изменяем настоящее имя
+            if real_name:
+                logger.debug(f"Установка настоящего имени: {real_name}")
+                try:
+                    # Ищем поле настоящего имени
+                    real_name_input = self.driver.find_element(By.CSS_SELECTOR, "input[id='real_name']")
+                    real_name_input.clear()
+                    real_name_input.send_keys(real_name)
+                    time.sleep(0.5)
+                    logger.debug("✓ Настоящее имя установлено")
+                except Exception as e:
+                    logger.error(f"✗ Ошибка установки настоящего имени: {str(e)}")
+                    success = False
+
+            # Изменяем текст "О себе"
+            if about_me:
+                logger.debug(f"Установка текста 'О себе': {about_me[:50]}...")
+                try:
+                    # Ищем поле "О себе"
+                    summary_input = self.driver.find_element(By.CSS_SELECTOR, "textarea[id='summary']")
+                    summary_input.clear()
+                    summary_input.send_keys(about_me)
+                    time.sleep(0.5)
+                    logger.debug("✓ Текст 'О себе' установлен")
+                except Exception as e:
+                    logger.error(f"✗ Ошибка установки текста 'О себе': {str(e)}")
+                    success = False
+
+            # Сохраняем изменения
+            logger.debug("Поиск кнопки сохранения...")
+            try:
+                # Ищем кнопку сохранения
+                save_selectors = [
+                    "button.btn_green_white_innerfade.btn_medium",
+                    "button[type='submit']",
+                    "//button[contains(text(), 'Save')]",
+                    "//button[contains(text(), 'Сохранить')]",
+                    "//button[contains(@class, 'btn_green')]"
+                ]
+
+                save_button = None
+                for selector in save_selectors:
+                    try:
+                        if selector.startswith("//"):
+                            save_button = self.driver.find_element(By.XPATH, selector)
+                        else:
+                            save_button = self.driver.find_element(By.CSS_SELECTOR, selector)
+                        if save_button and save_button.is_displayed():
+                            break
+                    except NoSuchElementException:
+                        continue
+
+                if save_button:
+                    logger.debug("Нажатие кнопки сохранения...")
+                    save_button.click()
+                    time.sleep(2)
+                    logger.info(f"✓ Профиль обновлен для {username}")
+                else:
+                    logger.warning("⚠️ Кнопка сохранения не найдена")
+                    # Пробуем нажать Enter на последнем поле
+                    try:
+                        from selenium.webdriver.common.keys import Keys
+                        if about_me:
+                            summary_input.send_keys(Keys.RETURN)
+                        elif real_name:
+                            real_name_input.send_keys(Keys.RETURN)
+                        elif profile_name:
+                            name_input.send_keys(Keys.RETURN)
+                        time.sleep(2)
+                        logger.debug("✓ Отправлено через Enter")
+                    except:
+                        pass
+
+            except Exception as e:
+                logger.error(f"✗ Ошибка при сохранении профиля: {str(e)}")
+                success = False
+
+            return success
+
+        except TimeoutException:
+            logger.error(f"✗ Превышено время ожидания при обновлении профиля")
+            return False
+        except Exception as e:
+            logger.error(f"✗ Ошибка обновления профиля: {str(e)}")
+            return False
+
     def logout(self, username: str):
         """Выход из аккаунта (закрытие сессии браузера)"""
         if self.current_username == username:

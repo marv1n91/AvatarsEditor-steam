@@ -18,6 +18,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 from steam_manager import SteamManager
 from account_manager import AccountManager, Account
 from avatar_manager import AvatarManager
+from profile_manager import ProfileManager
 
 # Инициализация colorama для цветного вывода
 init(autoreset=True)
@@ -155,6 +156,7 @@ def main():
     # Инициализация менеджеров
     account_manager = AccountManager('accounts/accounts.txt')
     avatar_manager = AvatarManager('avatars')
+    profile_manager = ProfileManager()
 
     # Загрузка аккаунтов
     print(f"{Fore.CYAN}🔄 Загрузка аккаунтов...")
@@ -176,12 +178,21 @@ def main():
         print(f"{Fore.YELLOW}   Поддерживаемые форматы: JPG, PNG, GIF, BMP")
         return
 
+    # Загрузка профильных данных
+    print(f"{Fore.CYAN}🔄 Загрузка профильных данных...")
+    profile_manager.load_profile_names()
+    profile_manager.load_real_names()
+    profile_manager.load_about_me_texts()
+
     # Вывод статистики
     print_stats(len(accounts), len(avatars), config['delay_between_accounts'])
 
     # Получаем уникальные аватарки для каждого аккаунта
     print(f"{Fore.CYAN}🎲 Выбор случайных аватарок для аккаунтов...\n")
     selected_avatars = avatar_manager.get_unique_avatars(len(accounts))
+
+    # Получаем профильные данные для каждого аккаунта
+    profile_data_list = profile_manager.get_unique_profile_data(len(accounts))
 
     # Расчет общего времени выполнения
     total_time = (len(accounts) - 1) * config['delay_between_accounts']
@@ -226,11 +237,39 @@ def main():
             avatar_name = os.path.basename(avatar_path)
             print(f"{Fore.YELLOW}  🖼️  Установка аватарки: {avatar_name}")
 
-            if steam_manager.change_avatar(account.username, avatar_path):
+            avatar_success = steam_manager.change_avatar(account.username, avatar_path)
+            if avatar_success:
                 print(f"{Fore.GREEN}  ✓ Аватарка успешно изменена!")
-                success_count += 1
             else:
                 print(f"{Fore.RED}  ✗ Не удалось изменить аватарку")
+
+            # Обновление профиля
+            profile_data = profile_data_list[i]
+            if profile_data['profile_name'] or profile_data['real_name'] or profile_data['about_me']:
+                print(f"{Fore.YELLOW}  📝 Обновление профиля...")
+                if profile_data['profile_name']:
+                    print(f"{Fore.YELLOW}     Имя: {profile_data['profile_name']}")
+                if profile_data['real_name']:
+                    print(f"{Fore.YELLOW}     Настоящее имя: {profile_data['real_name']}")
+                if profile_data['about_me']:
+                    print(f"{Fore.YELLOW}     О себе: {profile_data['about_me'][:50]}...")
+
+                profile_success = steam_manager.update_profile(
+                    account.username,
+                    profile_name=profile_data['profile_name'],
+                    real_name=profile_data['real_name'],
+                    about_me=profile_data['about_me']
+                )
+
+                if profile_success:
+                    print(f"{Fore.GREEN}  ✓ Профиль обновлен!")
+                else:
+                    print(f"{Fore.RED}  ✗ Не удалось обновить профиль")
+
+            # Подсчет успехов
+            if avatar_success:
+                success_count += 1
+            else:
                 fail_count += 1
 
         finally:

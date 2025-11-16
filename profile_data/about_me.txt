@@ -1,0 +1,48 @@
+# Тексты "О себе" для профилей
+# Разделяйте разные тексты с помощью ---
+# Строки начинающиеся с # игнорируются
+
+Just a casual gamer enjoying life and good games.
+---
+Competitive player looking for new challenges.
+Always ready for a new adventure!
+---
+Gaming is my passion. Let's play together!
+---
+Friendly player, always up for co-op games.
+Feel free to add me!
+---
+Pro CS:GO player. DM for team invites.
+---
+Collector of rare items and achievements.
+Trading welcome!
+---
+Stream viewer and casual player.
+Here to have fun!
+---
+Old school gamer trying new games.
+Open to friend requests!
+---
+Esports enthusiast. Always watching tournaments.
+---
+Just here to relax and play some games after work.
+---
+Achievement hunter on a mission!
+---
+Prefer single player but love co-op too.
+---
+Always looking for new gaming friends!
+---
+Retro gamer at heart.
+---
+MMORPG addict. Send help!
+---
+Puzzle games are my thing.
+---
+FPS player with good aim.
+---
+Strategy game lover.
+---
+Indie game supporter.
+---
+Gaming since childhood. Still going strong!

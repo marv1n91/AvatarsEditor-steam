@@ -1,0 +1,24 @@
+# Настоящие имена для профилей (одно на строку)
+# Можете добавить свои имена
+# Строки начинающиеся с # игнорируются
+
+Alex Smith
+John Doe
+Mike Johnson
+Chris Williams
+David Brown
+James Jones
+Robert Garcia
+Michael Miller
+William Davis
+Richard Rodriguez
+Joseph Martinez
+Thomas Hernandez
+Charles Lopez
+Daniel Gonzalez
+Matthew Wilson
+Anthony Anderson
+Mark Taylor
+Paul Moore
+Steven Jackson
+Andrew Martin

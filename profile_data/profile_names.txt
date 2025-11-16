@@ -1,0 +1,24 @@
+# Имена профилей Steam (одно на строку)
+# Можете добавить свои имена
+# Строки начинающиеся с # игнорируются
+
+ProGamer2024
+SteamMaster
+DarkKnight
+ShadowHunter
+FireStorm
+IceBreaker
+ThunderBolt
+NightRider
+DragonSlayer
+PhantomWarrior
+CyberNinja
+SilentAssassin
+RapidFire
+ViperStrike
+BlazeFury
+StormChaser
+MysticWarrior
+IronFist
+GhostReaper
+PixelHero
