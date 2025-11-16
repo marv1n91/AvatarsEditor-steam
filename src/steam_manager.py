@@ -201,30 +201,21 @@ class SteamManager:
             logger.debug(f"Переход на страницу входа Steam для {username}")
             self.driver.get("https://steamcommunity.com/login/home/?goto=")
 
-            # Ждем загрузки страницы
-            logger.debug("Ожидание загрузки страницы...")
-            time.sleep(5)
-
-            # Проверяем, что страница загрузилась
-            logger.debug(f"Текущий URL: {self.driver.current_url}")
-            logger.debug(f"Заголовок страницы: {self.driver.title}")
-
             # Находим и заполняем поле логина
             logger.debug("Поиск поля ввода логина...")
-            username_field = WebDriverWait(self.driver, 30).until(
+            username_field = WebDriverWait(self.driver, 20).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, "input[type='text']"))
             )
-            logger.debug("Поле логина найдено")
             username_field.clear()
             username_field.send_keys(username)
-            time.sleep(0.5)
+            time.sleep(0.2)
 
             # Находим и заполняем поле пароля
             logger.debug("Ввод пароля...")
             password_field = self.driver.find_element(By.CSS_SELECTOR, "input[type='password']")
             password_field.clear()
             password_field.send_keys(password)
-            time.sleep(0.5)
+            time.sleep(0.2)
 
             # Нажимаем кнопку входа
             logger.debug("Нажатие кнопки входа...")
@@ -233,7 +224,7 @@ class SteamManager:
 
             # Ждем появления формы Steam Guard или успешного входа
             logger.debug("Ожидание экрана подтверждения...")
-            time.sleep(7)  # Увеличено время ожидания
+            time.sleep(4)
 
             # Проверяем, требуется ли код Steam Guard
             try:
@@ -310,10 +301,10 @@ class SteamManager:
                     try:
                         # Прокручиваем к элементу если нужно
                         self.driver.execute_script("arguments[0].scrollIntoView(true);", use_code_button)
-                        time.sleep(0.5)
+                        time.sleep(0.3)
                         use_code_button.click()
                         logger.debug("✓ Кнопка нажата, ожидание появления поля ввода...")
-                        time.sleep(4)  # Увеличено время ожидания
+                        time.sleep(2)
                     except Exception as e:
                         logger.error(f"✗ Ошибка при нажатии кнопки: {e}")
                         # Сохраняем скриншот для отладки
@@ -410,7 +401,7 @@ class SteamManager:
                     logger.debug(f"Ввод кода Steam Guard: {guard_code}")
                     code_field.clear()
                     code_field.send_keys(guard_code)
-                    time.sleep(1)
+                    time.sleep(0.5)
 
                     # Нажимаем кнопку подтверждения
                     logger.debug("Поиск кнопки подтверждения...")
@@ -421,7 +412,7 @@ class SteamManager:
                     except:
                         logger.debug("Кнопка submit не найдена, код может отправиться автоматически")
 
-                    time.sleep(3)
+                    time.sleep(2)
                 else:
                     logger.error("✗ Требуется код Steam Guard, но shared_secret не предоставлен")
                     return False
@@ -473,7 +464,6 @@ class SteamManager:
         try:
             logger.debug(f"Переход на страницу редактирования профиля...")
             self.driver.get("https://steamcommunity.com/my/edit/avatar")
-            time.sleep(2)
 
             # Находим input для загрузки файла
             logger.debug("Поиск элемента загрузки файла...")
@@ -485,7 +475,7 @@ class SteamManager:
             logger.debug(f"Загрузка файла: {avatar_path}")
             abs_path = os.path.abspath(avatar_path)
             file_input.send_keys(abs_path)
-            time.sleep(2)
+            time.sleep(1)
 
             # Ищем и нажимаем кнопку сохранения
             logger.debug("Поиск кнопки сохранения...")
@@ -513,7 +503,7 @@ class SteamManager:
                 if save_button:
                     logger.debug("Нажатие кнопки сохранения...")
                     save_button.click()
-                    time.sleep(2)
+                    time.sleep(1)
 
                     logger.info(f"✓ Аватарка изменена для {username}")
                     return True
@@ -560,20 +550,8 @@ class SteamManager:
             logger.debug("Переход на страницу редактирования профиля...")
             self.driver.get("https://steamcommunity.com/my/edit")
 
-            # Увеличиваем время ожидания загрузки страницы
-            time.sleep(5)
-
-            # Добавляем отладочную информацию
-            logger.debug(f"Текущий URL: {self.driver.current_url}")
-            logger.debug(f"Заголовок страницы: {self.driver.title}")
-
-            # Сохраняем скриншот для отладки
-            try:
-                screenshot_path = f"debug_profile_page_{username}_{int(time.time())}.png"
-                self.driver.save_screenshot(screenshot_path)
-                logger.debug(f"Скриншот страницы: {screenshot_path}")
-            except:
-                pass
+            # Ждем загрузки страницы
+            time.sleep(2)
 
             success = True
 
@@ -611,7 +589,7 @@ class SteamManager:
                     if name_input:
                         name_input.clear()
                         name_input.send_keys(profile_name)
-                        time.sleep(0.5)
+                        time.sleep(0.2)
                         logger.debug("✓ Имя профиля установлено")
                     else:
                         logger.error("✗ Поле имени профиля не найдено ни одним селектором")
@@ -646,7 +624,7 @@ class SteamManager:
                     if real_name_input:
                         real_name_input.clear()
                         real_name_input.send_keys(real_name)
-                        time.sleep(0.5)
+                        time.sleep(0.2)
                         logger.debug("✓ Настоящее имя установлено")
                     else:
                         logger.warning("⚠️ Поле настоящего имени не найдено (возможно, не обязательное поле)")
@@ -683,7 +661,7 @@ class SteamManager:
                     if summary_input:
                         summary_input.clear()
                         summary_input.send_keys(about_me)
-                        time.sleep(0.5)
+                        time.sleep(0.2)
                         logger.debug("✓ Текст 'О себе' установлен")
                     else:
                         logger.warning("⚠️ Поле 'О себе' не найдено")
@@ -745,26 +723,17 @@ class SteamManager:
                 try:
                     # Переходим на страницу настроек
                     self.driver.get("https://steamcommunity.com/my/edit/settings")
-                    time.sleep(3)
-
-                    logger.debug(f"URL страницы настроек: {self.driver.current_url}")
-
-                    # Сохраняем скриншот страницы настроек
-                    try:
-                        screenshot_path = f"debug_settings_page_{username}_{int(time.time())}.png"
-                        self.driver.save_screenshot(screenshot_path)
-                        logger.debug(f"Скриншот страницы настроек: {screenshot_path}")
-                    except:
-                        pass
+                    time.sleep(2)
 
                     # Ищем dropdown со странами
                     country_select = None
                     country_selectors = [
+                        "select[name='LocCountryCode']",
                         "select[name='country']",
                         "select#country",
-                        "select[id='country']",
-                        "//select[contains(@name, 'country')]",
-                        "//select[contains(@id, 'country')]"
+                        "select[id='LocCountryCode']",
+                        "//select[contains(@name, 'Country')]",
+                        "//select[contains(@id, 'Country')]"
                     ]
 
                     for selector in country_selectors:
@@ -827,6 +796,141 @@ class SteamManager:
             return False
         except Exception as e:
             logger.error(f"✗ Ошибка обновления профиля: {str(e)}")
+            return False
+
+    def set_privacy_settings(self, username: str,
+                            profile: str = "public",
+                            game_details: str = "private",
+                            friends_list: str = "private",
+                            inventory: str = "private",
+                            comments: str = "friendsonly") -> bool:
+        """
+        Настройка параметров приватности профиля
+
+        Args:
+            username: Логин Steam (для проверки)
+            profile: Приватность профиля - "public", "friendsonly", "private"
+            game_details: Приватность игровой информации - "public", "friendsonly", "private"
+            friends_list: Приватность списка друзей - "public", "friendsonly", "private"
+            inventory: Приватность инвентаря - "public", "friendsonly", "private"
+            comments: Настройки комментариев - "public", "friendsonly", "private"
+
+        Returns:
+            True если настройка успешна
+        """
+        if self.current_username != username:
+            logger.error(f"✗ Аккаунт {username} не авторизован")
+            return False
+
+        try:
+            logger.debug("Переход на страницу настроек приватности...")
+            self.driver.get("https://steamcommunity.com/my/edit/settings")
+            time.sleep(3)
+
+            logger.debug(f"URL: {self.driver.current_url}")
+
+            # Словарь соответствия значений Steam
+            privacy_values = {
+                "public": "3",      # Открытый
+                "friendsonly": "2", # Только друзья
+                "private": "1"      # Скрытый
+            }
+
+            success = True
+
+            # Настройка приватности профиля
+            if profile:
+                logger.debug(f"Установка приватности профиля: {profile}")
+                try:
+                    profile_select = self.driver.find_element(By.CSS_SELECTOR, "select[name='ePrivacyProfile']")
+                    from selenium.webdriver.support.ui import Select
+                    Select(profile_select).select_by_value(privacy_values.get(profile, "3"))
+                    logger.debug(f"✓ Приватность профиля установлена: {profile}")
+                except Exception as e:
+                    logger.warning(f"⚠️ Не удалось установить приватность профиля: {e}")
+
+            # Настройка приватности игровой информации
+            if game_details:
+                logger.debug(f"Установка приватности игр: {game_details}")
+                try:
+                    games_select = self.driver.find_element(By.CSS_SELECTOR, "select[name='ePrivacyOwnedGames']")
+                    from selenium.webdriver.support.ui import Select
+                    Select(games_select).select_by_value(privacy_values.get(game_details, "1"))
+                    logger.debug(f"✓ Приватность игр установлена: {game_details}")
+                except Exception as e:
+                    logger.warning(f"⚠️ Не удалось установить приватность игр: {e}")
+
+            # Настройка приватности списка друзей
+            if friends_list:
+                logger.debug(f"Установка приватности друзей: {friends_list}")
+                try:
+                    friends_select = self.driver.find_element(By.CSS_SELECTOR, "select[name='ePrivacyFriendsList']")
+                    from selenium.webdriver.support.ui import Select
+                    Select(friends_select).select_by_value(privacy_values.get(friends_list, "1"))
+                    logger.debug(f"✓ Приватность друзей установлена: {friends_list}")
+                except Exception as e:
+                    logger.warning(f"⚠️ Не удалось установить приватность друзей: {e}")
+
+            # Настройка приватности инвентаря
+            if inventory:
+                logger.debug(f"Установка приватности инвентаря: {inventory}")
+                try:
+                    inventory_select = self.driver.find_element(By.CSS_SELECTOR, "select[name='ePrivacyInventory']")
+                    from selenium.webdriver.support.ui import Select
+                    Select(inventory_select).select_by_value(privacy_values.get(inventory, "1"))
+                    logger.debug(f"✓ Приватность инвентаря установлена: {inventory}")
+                except Exception as e:
+                    logger.warning(f"⚠️ Не удалось установить приватность инвентаря: {e}")
+
+            # Настройка комментариев
+            if comments:
+                logger.debug(f"Установка настроек комментариев: {comments}")
+                try:
+                    # Комментарии могут иметь другое имя поля
+                    comments_selectors = [
+                        "select[name='eCommentPermission']",
+                        "select[name='ePrivacyComments']"
+                    ]
+
+                    comments_select = None
+                    for selector in comments_selectors:
+                        try:
+                            comments_select = self.driver.find_element(By.CSS_SELECTOR, selector)
+                            break
+                        except:
+                            continue
+
+                    if comments_select:
+                        from selenium.webdriver.support.ui import Select
+                        Select(comments_select).select_by_value(privacy_values.get(comments, "2"))
+                        logger.debug(f"✓ Настройки комментариев установлены: {comments}")
+                    else:
+                        logger.warning("⚠️ Поле комментариев не найдено")
+                except Exception as e:
+                    logger.warning(f"⚠️ Не удалось установить настройки комментариев: {e}")
+
+            # Сохраняем изменения
+            logger.debug("Сохранение настроек приватности...")
+            try:
+                save_button = self.driver.find_element(By.CSS_SELECTOR, "button[type='submit']")
+                save_button.click()
+                time.sleep(2)
+                logger.info(f"✓ Настройки приватности сохранены для {username}")
+            except Exception as e:
+                logger.warning(f"⚠️ Ошибка при сохранении настроек: {e}")
+                # Пробуем нажать Enter
+                try:
+                    from selenium.webdriver.common.keys import Keys
+                    if inventory_select:
+                        inventory_select.send_keys(Keys.RETURN)
+                    time.sleep(2)
+                except:
+                    pass
+
+            return success
+
+        except Exception as e:
+            logger.error(f"✗ Ошибка настройки приватности: {str(e)}")
             return False
 
     def logout(self, username: str):

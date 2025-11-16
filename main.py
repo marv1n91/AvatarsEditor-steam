@@ -270,6 +270,28 @@ def main():
             else:
                 print(f"{Fore.RED}  ✗ Не удалось обновить профиль")
 
+            # Настройка приватности
+            print(f"{Fore.YELLOW}  🔒 Настройка приватности...")
+            print(f"{Fore.YELLOW}     Профиль: Открытый")
+            print(f"{Fore.YELLOW}     Игры: Скрытые")
+            print(f"{Fore.YELLOW}     Друзья: Скрытые")
+            print(f"{Fore.YELLOW}     Инвентарь: Скрытый")
+            print(f"{Fore.YELLOW}     Комментарии: Только друзья")
+
+            privacy_success = steam_manager.set_privacy_settings(
+                account.username,
+                profile="public",          # Открытый
+                game_details="private",    # Скрытый
+                friends_list="private",    # Скрытый
+                inventory="private",       # Скрытый
+                comments="friendsonly"     # Только друзья
+            )
+
+            if privacy_success:
+                print(f"{Fore.GREEN}  ✓ Приватность настроена!")
+            else:
+                print(f"{Fore.RED}  ✗ Не удалось настроить приватность")
+
             # Подсчет успехов
             if avatar_success:
                 success_count += 1
