@@ -309,7 +309,8 @@ class SteamManager:
                         logger.error(f"✗ Ошибка при нажатии кнопки: {e}")
                         # Сохраняем скриншот для отладки
                         try:
-                            screenshot_path = f"debug_screenshot_{username}_{int(time.time())}.png"
+                            os.makedirs('screenshots', exist_ok=True)
+                            screenshot_path = f"screenshots/debug_screenshot_{username}_{int(time.time())}.png"
                             self.driver.save_screenshot(screenshot_path)
                             logger.debug(f"Скриншот сохранен: {screenshot_path}")
                         except:
@@ -320,7 +321,8 @@ class SteamManager:
                     logger.warning("   Возможно экран выглядит иначе или уже открыто поле ввода")
                     # Сохраняем скриншот для отладки
                     try:
-                        screenshot_path = f"debug_no_button_{username}_{int(time.time())}.png"
+                        os.makedirs('screenshots', exist_ok=True)
+                        screenshot_path = f"screenshots/debug_no_button_{username}_{int(time.time())}.png"
                         self.driver.save_screenshot(screenshot_path)
                         logger.warning(f"   Скриншот сохранен для анализа: {screenshot_path}")
                     except:
@@ -383,7 +385,8 @@ class SteamManager:
                     logger.warning("⚠️ Поле для ввода кода не найдено!")
                     # Сохраняем скриншот для отладки
                     try:
-                        screenshot_path = f"debug_no_field_{username}_{int(time.time())}.png"
+                        os.makedirs('screenshots', exist_ok=True)
+                        screenshot_path = f"screenshots/debug_no_field_{username}_{int(time.time())}.png"
                         self.driver.save_screenshot(screenshot_path)
                         logger.warning(f"   Скриншот сохранен: {screenshot_path}")
                     except:

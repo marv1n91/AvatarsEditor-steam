@@ -50,6 +50,10 @@ mafiles/*.maFile
 avatars/*
 !avatars/.gitkeep
 
+# Screenshots (отладочные скриншоты)
+screenshots/*
+!screenshots/.gitkeep
+
 # OS
 .DS_Store
 Thumbs.db

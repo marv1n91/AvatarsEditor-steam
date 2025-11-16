@@ -136,6 +136,7 @@ def main():
     os.makedirs('logs', exist_ok=True)
     os.makedirs('accounts', exist_ok=True)
     os.makedirs('avatars', exist_ok=True)
+    os.makedirs('screenshots', exist_ok=True)
 
     # Временная настройка логирования для загрузки конфига
     setup_logging('INFO')
